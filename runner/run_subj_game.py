@@ -83,7 +83,8 @@ def get_claims(dataset_path="./claims/perspectrum_claims.csv", anthropic_dataset
     if dataset_path is not None:
         subjective_claims = pd.read_csv(dataset_path)
         subj = set()
-        for claim in subjective_claims["Claim"]:
+        for claim in (subjective_claims["Claim"] if "Claim" in subjective_claims.columns else subjective_claims["prompt"]
+        ):
             subj.add(claim)
     
         retval = retval + sorted(list(subj))
