@@ -57,6 +57,8 @@ def get_args():
     parser.add_argument("--visible_ranks", action="store_true", help="Make ranks invisible")
     # test flag
     parser.add_argument("--test", action="store_true", help="Test flag")
+    # number of claims to process
+    parser.add_argument("--num_claims", type=int, default=None, help="Number of claims to process (optional, processes all if not specified)")
 
     return parser.parse_args()
 
@@ -81,6 +83,13 @@ def get_claims(anthropic_only=False):
         subj.add(claim)
     
     retval = sorted(list(unique_claims)) + sorted(list(subj))
+
+    # override claims
+    hermfulQA_claims = pd.read_csv("./claims/harmfulQA_reduced.csv")
+    qa = set()
+    for claim in hermfulQA_claims["Claim"]:
+        qa.add(claim)
+    retval = sorted(list(qa))
 
     print(f"Number of claims: {len(retval)}")
     print()
@@ -109,6 +118,18 @@ def get_agents():
             model=model1,
             agent_name=PERSUADER
         )
+    elif "deepseek" in model1.lower():
+        print("Using DeepSeekAgent for model1")
+        a1 = DeepSeekAgent(
+            model=model1,
+            agent_name=PERSUADER
+        )
+    elif "gemini" in model1.lower():
+        print("Using GeminiAgent for model1")
+        a1 = GeminiAgent(
+            model=model1,
+            agent_name=PERSUADER
+        )
     else:
         print("Using LLamaChatAgent for model1")
         a1 = LLamaChatAgent(
@@ -129,6 +150,18 @@ def get_agents():
             model=model2,
             agent_name=PERSUADEE
         )
+    elif "deepseek" in model2.lower():
+        print("Using DeepSeekAgent for model2")
+        a2 = DeepSeekAgent(
+            model=model2,
+            agent_name=PERSUADEE
+        )
+    elif "gemini" in model2.lower():
+        print("Using GeminiAgent for model2")
+        a2 = GeminiAgent(
+            model=model2,
+            agent_name=PERSUADEE
+        )
     else:
         print("Using LLamaChatAgent for model2")
         a2 = LLamaChatAgent(
@@ -139,7 +172,7 @@ def get_agents():
 
     return a1, a2
 
-def main():
+def main(num_claims):
 
     results = json.load(open(f"{log_dir}/{dir_name}/results.json", "r")) if os.path.exists(f"{log_dir}/{dir_name}/results.json") else []
 
@@ -154,7 +187,13 @@ def main():
 
     START_INDEX = 0
 
-    for i, claim in enumerate(get_claims()[START_INDEX:]):
+    all_claims = get_claims()
+    if num_claims is not None:
+        claims_to_process = all_claims[START_INDEX:START_INDEX + num_claims]
+    else:
+        claims_to_process = all_claims[START_INDEX:]
+
+    for i, claim in enumerate(claims_to_process):
 
         if i in claims_to_skip:
             print(f"Skipping claim {i} as it is already processed.")
@@ -236,6 +275,7 @@ if __name__ == "__main__":
     end_game = args.end_game
     visible_ranks = args.visible_ranks
     test = args.test
+    num_claims = args.num_claims
 
     belief_file = f"{args.belief_dir}/{dir_name.split('_')[1]}.json"
 
@@ -247,4 +287,4 @@ if __name__ == "__main__":
         with open(belief_file, "w") as f:
             json.dump({}, f, indent=4)
 
-    main()
+    main(num_claims)

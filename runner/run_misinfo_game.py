@@ -93,6 +93,18 @@ def get_agents():
             model=model1,
             agent_name=PERSUADER
         )
+    elif "deepseek" in model1.lower():
+        print("Using DeepSeekAgent for model1")
+        a1 = DeepSeekAgent(
+            model=model1,
+            agent_name=PERSUADER
+        )
+    elif "gemini" in model1.lower():
+        print("Using GeminiAgent for model1")
+        a1 = GeminiAgent(
+            model=model1,
+            agent_name=PERSUADER
+        )
     else:
         print("Using LLamaChatAgent for model1")
         a1 = LLamaChatAgent(
@@ -110,6 +122,18 @@ def get_agents():
     elif "claude" in model2.lower():
         print("Using ClaudeAgent for model2")
         a2 = ClaudeAgent(
+            model=model2,
+            agent_name=PERSUADEE
+        )
+    elif "deepseek" in model2.lower():
+        print("Using DeepSeekAgent for model2")
+        a2 = DeepSeekAgent(
+            model=model2,
+            agent_name=PERSUADEE
+        )
+    elif "gemini" in model2.lower():
+        print("Using GeminiAgent for model2")
+        a2 = GeminiAgent(
             model=model2,
             agent_name=PERSUADEE
         )
