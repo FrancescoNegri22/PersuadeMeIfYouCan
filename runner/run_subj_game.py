@@ -59,37 +59,34 @@ def get_args():
     parser.add_argument("--test", action="store_true", help="Test flag")
     # number of claims to process
     parser.add_argument("--num_claims", type=int, default=None, help="Number of claims to process (optional, processes all if not specified)")
+    parser.add_argument("--dataset_path", type=str, default=None, help="Dataset path")
 
     return parser.parse_args()
 
 
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
-def get_claims(anthropic_only=False):
-    dataset = load_dataset("Anthropic/persuasion", split="train")
-    # get all claims from the dataset
-    unique_claims = set([item["claim"] for item in dataset])
+def get_claims(dataset_path="./claims/perspectrum_claims.csv", anthropic_dataset=False):
+    retval = []
 
-    # filter out control claims
-    control_claims = set([item["claim"] for item in dataset if item["source"] == "Control"])
-    unique_claims = unique_claims - control_claims
+    if anthropic_dataset:
+        dataset = load_dataset("Anthropic/persuasion", split="train")
+        # get all claims from the dataset
+        unique_claims = set([item["claim"] for item in dataset])
 
-    if anthropic_only:
-        return sorted(list(unique_claims))
+        # filter out control claims
+        control_claims = set([item["claim"] for item in dataset if item["source"] == "Control"])
+        unique_claims = unique_claims - control_claims
+
+        retval = sorted(list(unique_claims))
 
     # add claims from "subjective_claims.csv"
-    subjective_claims = pd.read_csv("./claims/perspectrum_claims.csv")
-    subj = set()
-    for claim in subjective_claims["Claim"]:
-        subj.add(claim)
+    if dataset_path is not None:
+        subjective_claims = pd.read_csv(dataset_path)
+        subj = set()
+        for claim in subjective_claims["Claim"]:
+            subj.add(claim)
     
-    retval = sorted(list(unique_claims)) + sorted(list(subj))
-
-    # override claims
-    hermfulQA_claims = pd.read_csv("./claims/harmfulQA_reduced.csv")
-    qa = set()
-    for claim in hermfulQA_claims["Claim"]:
-        qa.add(claim)
-    retval = sorted(list(qa))
+        retval = retval + sorted(list(subj))
 
     print(f"Number of claims: {len(retval)}")
     print()
@@ -172,7 +169,7 @@ def get_agents():
 
     return a1, a2
 
-def main(num_claims):
+def main():
 
     results = json.load(open(f"{log_dir}/{dir_name}/results.json", "r")) if os.path.exists(f"{log_dir}/{dir_name}/results.json") else []
 
@@ -187,7 +184,7 @@ def main(num_claims):
 
     START_INDEX = 0
 
-    all_claims = get_claims()
+    all_claims = get_claims(dataset_path=dataset_path)
     if num_claims is not None:
         claims_to_process = all_claims[START_INDEX:START_INDEX + num_claims]
     else:
@@ -275,7 +272,9 @@ if __name__ == "__main__":
     end_game = args.end_game
     visible_ranks = args.visible_ranks
     test = args.test
+
     num_claims = args.num_claims
+    dataset_path = args.dataset_path
 
     belief_file = f"{args.belief_dir}/{dir_name.split('_')[1]}.json"
 
@@ -287,4 +286,4 @@ if __name__ == "__main__":
         with open(belief_file, "w") as f:
             json.dump({}, f, indent=4)
 
-    main(num_claims)
+    main()
