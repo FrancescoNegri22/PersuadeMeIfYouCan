@@ -129,7 +129,7 @@ def get_agents():
             agent_name=PERSUADER
         )
     else:
-        print("Using LLamaChatAgent for model1")
+        print("Using local model for model1")
         a1 = LLamaChatAgent(
             model=model1,
             agent_name=PERSUADER,
@@ -161,7 +161,7 @@ def get_agents():
             agent_name=PERSUADEE
         )
     else:
-        print("Using LLamaChatAgent for model2")
+        print("Using local model for model2")
         a2 = LLamaChatAgent(
             model=model2,
             agent_name=PERSUADEE,
