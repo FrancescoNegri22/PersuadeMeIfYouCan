@@ -5,6 +5,9 @@ import inspect
 from pathlib import Path
 from typing import List
 from abc import ABC, abstractmethod
+
+from tqdm import tqdm
+
 from pmiyc.objects.game import Game
 from pmiyc.agents.agents import Agent
 from pmiyc.utils import get_next_filename
@@ -45,8 +48,8 @@ class AlternatingGame(Game):
         try:
             agent_message = self.game_interface.parse(response)
         except Exception as e:
-            print("response : {}".format(response))
-            print(f"Conversation failed. Error: {e}")
+            #tqdm.write("response : {}".format(response))
+            #tqdm.write(f"Conversation failed. Error: {e}")
             raise e
 
         datum = dict(
@@ -88,10 +91,10 @@ class AlternatingGame(Game):
         """
         for debugging
         """
-        print("State:")
+        tqdm.write("State:")
         for k, v in self.game_state[iteration].items():
             if k not in ignore:
-                print(k, ":", v)
+                tqdm.write(k, ":", v)
 
     def resume(self, iteration: int, log_dir: str = None, fname: str = None):
         # branch off current logfile
@@ -158,6 +161,7 @@ class AlternatingGame(Game):
             self.write_game_state(self.players, response)
 
             # for debug
+            """
             self.view_state(
                 ignore=[
                     "player_public_answer_string",
@@ -166,12 +170,13 @@ class AlternatingGame(Game):
                     "player_state",
                 ]
             )
+            """
 
             # for logging / reproducibility
             self.log_state()
 
             self.get_next_player()
-            print("=============\n")
+            #tqdm.write("=============\n")
 
         
         # print("\n--- Game Over, aksing final decision ----\n")
@@ -187,6 +192,7 @@ class AlternatingGame(Game):
         self.write_game_state(self.players, response)
 
         # for debug
+        """
         self.view_state(
             ignore=[
                 "player_public_answer_string",
@@ -195,6 +201,7 @@ class AlternatingGame(Game):
                 "player_state",
             ]
         )
+        """
 
         # log final state
         self.log_state()

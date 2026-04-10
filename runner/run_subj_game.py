@@ -1,5 +1,8 @@
 import os
 import sys
+
+from tqdm import tqdm
+
 # Add the parent directory to the Python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -32,6 +35,21 @@ set_verbosity_error()
 disable_progress_bar()
 
 load_dotenv()
+
+# Global variables (used when called via run_game function)
+model1 = None
+model1_path = None
+model2 = None
+model2_path = None
+log_dir = None
+dir_name = None
+end_game = None
+visible_ranks = None
+test = None
+num_claims = None
+dataset_path = None
+belief_file = None
+iterations = None
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -89,8 +107,7 @@ def get_claims(dataset_path="./claims/perspectrum_claims.csv", anthropic_dataset
     
         retval = retval + sorted(list(subj))
 
-    print(f"Number of claims: {len(retval)}")
-    print()
+    #tqdm.write(f"Number of claims: {len(retval)}")
     return retval
 
 
@@ -103,33 +120,33 @@ def conv_to_str(conversation):
     return conversation_str.strip()
 
 def get_agents():
-    print("\n\n", "-"*50)
+    #tqdm.write("\n\n" + "-"*50)
     if "gpt" in model1.lower() or "o4" in model1.lower():
-        print("Using ChatGPTAgent for model1")
+        #tqdm.write("Using ChatGPTAgent for model1")
         a1 = ChatGPTAgent(
             model=model1,
             agent_name=PERSUADER
         )
     elif "claude" in model1.lower():
-        print("Using ClaudeAgent for model1")
+        #tqdm.write("Using ClaudeAgent for model1")
         a1 = ClaudeAgent(
             model=model1,
             agent_name=PERSUADER
         )
     elif "deepseek" in model1.lower():
-        print("Using DeepSeekAgent for model1")
+        #tqdm.write("Using DeepSeekAgent for model1")
         a1 = DeepSeekAgent(
             model=model1,
             agent_name=PERSUADER
         )
     elif "gemini" in model1.lower():
-        print("Using GeminiAgent for model1")
+        #tqdm.write("Using GeminiAgent for model1")
         a1 = GeminiAgent(
             model=model1,
             agent_name=PERSUADER
         )
     else:
-        print("Using local model for model1")
+        #tqdm.write("Using local model for model1")
         a1 = LLamaChatAgent(
             model=model1,
             agent_name=PERSUADER,
@@ -137,31 +154,31 @@ def get_agents():
         )
 
     if "gpt" in model2.lower() or "o4" in model2.lower():
-        print("Using ChatGPTAgent for model2")
+        #tqdm.write("Using ChatGPTAgent for model2")
         a2 = ChatGPTAgent(
             model=model2,
             agent_name=PERSUADEE
         )
     elif "claude" in model2.lower():
-        print("Using ClaudeAgent for model2")
+        #tqdm.write("Using ClaudeAgent for model2")
         a2 = ClaudeAgent(
             model=model2,
             agent_name=PERSUADEE
         )
     elif "deepseek" in model2.lower():
-        print("Using DeepSeekAgent for model2")
+        #tqdm.write("Using DeepSeekAgent for model2")
         a2 = DeepSeekAgent(
             model=model2,
             agent_name=PERSUADEE
         )
     elif "gemini" in model2.lower():
-        print("Using GeminiAgent for model2")
+        #tqdm.write("Using GeminiAgent for model2")
         a2 = GeminiAgent(
             model=model2,
             agent_name=PERSUADEE
         )
     else:
-        print("Using local model for model2")
+        #tqdm.write("Using local model for model2")
         a2 = LLamaChatAgent(
             model=model2,
             agent_name=PERSUADEE,
@@ -180,8 +197,8 @@ def main():
     for elem in results:
         claims_to_skip.add(elem["i"])
 
-    if len(claims_to_skip) > 0:
-        print(f"Skipping {len(claims_to_skip)} claims that are already processed.")
+    #if len(claims_to_skip) > 0:
+        #tqdm.write(f"Skipping {len(claims_to_skip)} claims that are already processed.")
 
     START_INDEX = 0
 
@@ -191,18 +208,18 @@ def main():
     else:
         claims_to_process = all_claims[START_INDEX:]
 
-    for i, claim in enumerate(claims_to_process):
+    for i, claim in tqdm(enumerate(claims_to_process), desc="Claims to process", total=len(claims_to_process), leave=False):
 
         if i in claims_to_skip:
-            print(f"Skipping claim {i} as it is already processed.")
+            #tqdm.write(f"Skipping claim {i} as it is already processed.")
             continue
 
         a1, a2 = get_agents()
-        print("\n\n", "-"*50)
+        #tqdm.write("\n\n" + "-"*50)
 
         j = i + START_INDEX
         
-        print(f"{j}: {claim}")
+        #tqdm.write(f"{j}: {claim}")
 
         game = PersuasionGame(
             players=[a1, a2],
@@ -219,7 +236,7 @@ def main():
             conversation = game.run()
         
         except Exception as e:
-            print(f"Error: {e}")
+            #tqdm.write(f"Error: {e}")
             skipped.append(claim)
             continue
 
@@ -246,14 +263,45 @@ def main():
             json.dump(results, f, indent=4)
 
     except Exception as e:
-        print(f"Error sorting results: {e}")
+        tqdm.write(f"Error sorting results: {e}")
 
     # write the skipped claims to a file
     with open(f"{log_dir}/{dir_name}/skipped_claims.txt", "w") as f:
         for claim in skipped:
             f.write(f"{claim}\n") 
 
-    print(f"Completed subjetive game for persuader {model1} and persuadee {model2} with {len(results)} claims.")
+    #tqdm.write(f"Completed subjetive game for persuader {model1} and persuadee {model2} with {len(results)} claims.")
+
+def run_game(iterations, model1, model2, model1_path, model2_path, log_dir, dir_name, belief_dir, end_game, visible_ranks, test, num_claims, dataset_path):
+    """
+    Run the persuasion game with the given parameters.
+    This function allows the script to be called from another module while keeping tqdm functional.
+    """
+    # Set global variables from parameters
+    globals()['iterations'] = iterations
+    globals()['model1'] = model1
+    globals()['model2'] = model2
+    globals()['model1_path'] = model1_path
+    globals()['model2_path'] = model2_path
+    globals()['log_dir'] = log_dir
+    globals()['dir_name'] = dir_name
+    globals()['end_game'] = end_game
+    globals()['visible_ranks'] = visible_ranks
+    globals()['test'] = test
+    globals()['num_claims'] = num_claims
+    globals()['dataset_path'] = dataset_path
+
+    belief_file_local = f"{belief_dir}/{dir_name.split('_')[1]}.json"
+    globals()['belief_file'] = belief_file_local
+
+    # check if beliefs file exists, if not create empty json file
+    if not os.path.exists(belief_file_local):
+        os.makedirs(os.path.dirname(belief_file_local), exist_ok=True)
+        # create empty json file
+        with open(belief_file_local, "w") as f:
+            json.dump({}, f, indent=4)
+
+    main()
 
 
 if __name__ == "__main__":
@@ -281,7 +329,7 @@ if __name__ == "__main__":
 
     # check if beliefs file exists, if not create empty json file
     if not os.path.exists(belief_file):
-        print(f"Creating empty belief file: {belief_file}")
+        #tqdm.write(f"Creating empty belief file: {belief_file}")
         os.makedirs(os.path.dirname(belief_file), exist_ok=True)
         # create empty json file
         with open(belief_file, "w") as f:

@@ -1,3 +1,5 @@
+from tqdm import tqdm
+
 from pmiyc.alternating_game import AlternatingGame
 from pmiyc.parser import GameParser
 from pmiyc.constants import *
@@ -44,7 +46,7 @@ class PersuasionGameDefaultParser(GameParser):
             ms.add_public(MESSAGE_TAG, response[MESSAGE_TAG])
             ms.add_secret(RANKING_TAG, response[RANKING_TAG])  
         except Exception as e:
-            print(f"Conversation failed. Error: {e}")
+            #tqdm.write(f"Conversation failed. Error: {e}")
             raise e
 
         return ms
@@ -147,7 +149,7 @@ class PersuasionGame(AlternatingGame):
             with open(self.belief_file, "r") as f:
                 data = json.load(f)
                 if model_name in data and persuadee_claim in data[model_name]:
-                    print("Retrieving persuadee's initial ranking from model_beliefs.json")
+                    #tqdm.write("Retrieving persuadee's initial ranking from model_beliefs.json")
                     response = data[model_name][persuadee_claim]
                     response_str = get_response_str(response, visible_ranks=self.visible_ranks)
 
@@ -186,6 +188,7 @@ class PersuasionGame(AlternatingGame):
         self.write_game_state(self.players, response)
 
         # for debug
+        """
         self.view_state(
             ignore=[
                 "player_public_answer_string",
@@ -194,14 +197,15 @@ class PersuasionGame(AlternatingGame):
                 "player_state",
             ]
         )
+        """
 
         # for logging / reproducibility
         self.log_state()
         self.get_next_player()
-        print("=============\n")
+        #tqdm.write("=============\n")
         
         # start with iteration = 1
-        for iteration in range(1, self.iterations + 1):
+        for iteration in tqdm(range(1, self.iterations + 1), desc="Conversation Progress", leave=False):
             self.current_iteration = iteration
 
             # get ratbench state from last iteration
@@ -221,6 +225,7 @@ class PersuasionGame(AlternatingGame):
             self.write_game_state(self.players, response)
 
             # for debug
+            """
             self.view_state(
                 ignore=[
                     "player_public_answer_string",
@@ -229,6 +234,7 @@ class PersuasionGame(AlternatingGame):
                     "player_state",
                 ]
             )
+            """
 
             # for logging / reproducibility
             self.log_state()
@@ -239,10 +245,10 @@ class PersuasionGame(AlternatingGame):
                 break
 
             self.get_next_player()
-            print("=============\n")
+            #tqdm.write("=============\n")
 
         
-        print("\n--- Conversation Over, asking persuadee's final decision ----\n")
+        #tqdm.write("\n--- Conversation Over, asking persuadee's final decision ----\n")
         # ask Persuadee its final decision given the conversation history
         self.current_iteration += 1
         self.turn = 1
@@ -264,6 +270,7 @@ class PersuasionGame(AlternatingGame):
         self.write_game_state(self.players, response)
 
         # for debug
+        """
         self.view_state(
             ignore=[
                 "player_public_answer_string",
@@ -272,6 +279,7 @@ class PersuasionGame(AlternatingGame):
                 "player_state",
             ]
         )
+        """
 
         # log final state
         self.log_state()
@@ -380,7 +388,7 @@ class MisinformationGame(AlternatingGame):
             with open(self.belief_file, "r") as f:
                 data = json.load(f)
                 if model_name in data and f"{persuadee_question} {persuadee_claim}" in data[model_name]:
-                    print("Retrieving persuadee's initial ranking from model_beliefs.json")
+                    #tqdm.write("Retrieving persuadee's initial ranking from model_beliefs.json")
                     response = data[model_name][f"{persuadee_question} {persuadee_claim}"]
                     response_str = get_response_str(response, visible_ranks=self.visible_ranks)
 
@@ -419,6 +427,7 @@ class MisinformationGame(AlternatingGame):
         self.write_game_state(self.players, response)
 
         # for debug
+        """
         self.view_state(
             ignore=[
                 "player_public_answer_string",
@@ -427,11 +436,12 @@ class MisinformationGame(AlternatingGame):
                 "player_state",
             ]
         )
+        """
 
         # for logging / reproducibility
         self.log_state()
         self.get_next_player()
-        print("=============\n")
+        #tqdm.write("=============\n")
         
         # start with iteration = 1
         for iteration in range(1, self.iterations + 1):
@@ -454,6 +464,7 @@ class MisinformationGame(AlternatingGame):
             self.write_game_state(self.players, response)
 
             # for debug
+            """
             self.view_state(
                 ignore=[
                     "player_public_answer_string",
@@ -462,6 +473,7 @@ class MisinformationGame(AlternatingGame):
                     "player_state",
                 ]
             )
+            """
 
             # for logging / reproducibility
             self.log_state()
@@ -472,10 +484,10 @@ class MisinformationGame(AlternatingGame):
                 break
 
             self.get_next_player()
-            print("=============\n")
+            #tqdm.write("=============\n")
 
         
-        print("\n--- Conversation Over, asking persuadee's final decision ----\n")
+        #tqdm.write("\n--- Conversation Over, asking persuadee's final decision ----\n")
         # ask Persuadee its final decision given the conversation history
         self.current_iteration += 1
         self.turn = 1
@@ -497,6 +509,7 @@ class MisinformationGame(AlternatingGame):
         self.write_game_state(self.players, response)
 
         # for debug
+        """
         self.view_state(
             ignore=[
                 "player_public_answer_string",
@@ -505,6 +518,7 @@ class MisinformationGame(AlternatingGame):
                 "player_state",
             ]
         )
+        """
 
         # log final state
         self.log_state()
