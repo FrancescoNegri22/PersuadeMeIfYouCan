@@ -33,7 +33,7 @@ class LLamaChatAgent(Agent):
         self.max_tokens = max_tokens
         self.client = openai.OpenAI(
             base_url=base_url,
-            api_key="EMPTY",
+            api_key=os.environ.get("LOCAL_APIKEY"),
         )
 
     def __deepcopy__(self, memo):
