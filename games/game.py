@@ -140,6 +140,8 @@ class PersuasionGame(AlternatingGame):
 
         message_to_agent = persuadee_starter_prompt()
 
+        expected_keys = [MESSAGE_TAG, RANKING_TAG]
+
         # check if the persuadee's initial ranking exists in the db
         # if it does, return it to be added to the conversation history
 
@@ -157,8 +159,8 @@ class PersuasionGame(AlternatingGame):
                     persuadee.update_conversation_tracking("user", message_to_agent)
                     persuadee.update_conversation_tracking("assistant", response_str)
 
-        if response is None:
-            response = self.players[1].step(message_to_agent, expected_keys=[MESSAGE_TAG, RANKING_TAG], visible_ranks=self.visible_ranks)
+        if response is None or any(key not in response for key in expected_keys):
+            response = self.players[1].step(message_to_agent, expected_keys=expected_keys, visible_ranks=self.visible_ranks)
 
             if not self.test:
                 # save the persuadee's initial ranking to the model_beliefs.json file

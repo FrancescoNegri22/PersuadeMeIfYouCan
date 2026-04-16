@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 
 from tqdm import tqdm
 
@@ -235,8 +236,8 @@ def main():
         try:
             conversation = game.run()
         
-        except Exception as e:
-            #tqdm.write(f"Error: {e}")
+        except Exception:
+            #tqdm.write(f"Error: {traceback.format_exc()}")
             skipped.append(claim)
             continue
 

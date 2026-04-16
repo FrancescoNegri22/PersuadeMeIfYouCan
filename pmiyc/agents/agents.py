@@ -67,7 +67,7 @@ class Agent(ABC):
     def resume_conversation(self, conversation_history):
         self.conversation = conversation_history
 
-    def think(self, try_count=5, expected_keys=None, visible_ranks=False):
+    def think(self, try_count=1, expected_keys=None, visible_ranks=False):
         """
         Think method calls the chat function and updates the history of the conversation.
         Next time the agents chats, it will use the updated history.
@@ -102,16 +102,25 @@ class Agent(ABC):
         if message:
             self.update_conversation_tracking("user", message)
 
-        while(True):
+        response  = None
+
+        for i in range(10):
             try:
                 response = self.think(expected_keys = expected_keys, visible_ranks=visible_ranks)
+                if response is None: raise ValueError
                 for key in expected_keys:
                     if key not in response:
-                        raise KeyError()
+                        raise KeyError(key)
                 break
-            except KeyError:
-                tqdm.write("Response is missing expected keys. Retrying...")
+            except KeyError as e:
+                #tqdm.write(f"Response: {response}")
+                tqdm.write(f"Response is missing expected key: {e}. Retrying... (attempt {i+1}/{10})")
+            except ValueError:
+                tqdm.write(f"Response is missing. Retrying... (attempt {i+1}/{10})")
 
+            response = None
+
+        if response is None: raise Exception("Invalid Response after 10 attempts, skipping conversation.")
 
         if response and RANKING_TAG in response:
             ranking = support_to_int(response[RANKING_TAG])
