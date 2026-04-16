@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 import copy
+
+from tqdm import tqdm
+
 from pmiyc.constants import *
 from copy import deepcopy
 from pmiyc.utils import advanced_parse, support_to_int, get_response_str
@@ -99,7 +102,16 @@ class Agent(ABC):
         if message:
             self.update_conversation_tracking("user", message)
 
-        response = self.think(expected_keys = expected_keys, visible_ranks=visible_ranks)
+        while(True):
+            try:
+                response = self.think(expected_keys = expected_keys, visible_ranks=visible_ranks)
+                for key in expected_keys:
+                    if key not in response:
+                        raise KeyError()
+                break
+            except KeyError:
+                tqdm.write("Response is missing expected keys. Retrying...")
+
 
         if response and RANKING_TAG in response:
             ranking = support_to_int(response[RANKING_TAG])
